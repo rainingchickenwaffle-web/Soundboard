@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<!-- saved from url=(0056)file:///C:/Users/Prohor/OneDrive/Desktop/soundboard.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Soundboard</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(rgba(17,24,39,0.2), rgba(31,41,55,0.2)), url('https://preview.redd.it/how-do-i-create-these-large-wheat-farms-where-is-the-water-v0-zn7lfnvnvyrd1.png?auto=webp&s=570afe8f8699d42777e83493e48e0626adaeedd3');
+      background-size: cover;
+      background-position: center;
+      color: black;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      background: rgba(255,255,255,0.5);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 2.5rem;
+    }
+
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+      justify-content: center;
+    }
+
+    button,
+    input[type="file"] {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 1rem;
+    }
+
+    button {
+      background: #3b82f6;
+      color: black;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease;
+    }
+
+    button:hover {
+      background: #2563eb;
+      transform: translateY(-2px);
+    }
+
+    .sound-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .sound-card {
+      background: rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.2s ease, background 0.2s ease;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .sound-card:hover {
+      transform: scale(1.02);
+      background: rgba(255,255,255,0.12);
+    }
+
+    .sound-name {
+      font-size: 1.1rem;
+      font-weight: bold;
+      word-break: break-word;
+    }
+
+    .keybind {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .controls button {
+      flex: 1;
+      padding: 10px;
+      font-size: 0.9rem;
+    }
+
+    .play-btn {
+      background: #10b981;
+    }
+
+    .play-btn:hover {
+      background: #059669;
+    }
+
+    .delete-btn {
+      background: #ef4444;
+    }
+
+    .delete-btn:hover {
+      background: #dc2626;
+    }
+
+    .footer {
+      margin-top: 24px;
+      text-align: center;
+      opacity: 0.7;
+      font-size: 0.95rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      opacity: 0.7;
+      padding: 40px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎵 Custom Soundboard</h1>
+
+    <div class="top-bar">
+      <input type="file" id="audioUpload" accept="audio/*" multiple="">
+      <button id="stopAllBtn">Stop All Sounds</button>
+      <button id="clearBtn">Clear Soundboard</button>
+    </div>
+
+    <div class="sound-grid" id="soundGrid"><div class="sound-card"><div class="sound-name">chicken-on-tree-screaming.mp3</div><div class="keybind">Hotkey: NumPad 0</div><div class="controls"><button class="play-btn">▶ Play</button><button class="delete-btn">✖ Delete</button></div></div></div>
+
+    <div class="empty-state" id="emptyState" style="display: none;">
+      Upload audio files to create your soundboard.
+    </div>
+
+    <div class="footer">
+      Keyboard shortcuts automatically assign from NumPad 0–9.
+    </div>
+  </div>
+
+  <script>
+    const uploadInput = document.getElementById('audioUpload');
+    const soundGrid = document.getElementById('soundGrid');
+    const stopAllBtn = document.getElementById('stopAllBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const emptyState = document.getElementById('emptyState');
+
+    const sounds = [];
+    const keyPool = ['Numpad0','Numpad1','Numpad2','Numpad3','Numpad4','Numpad5','Numpad6','Numpad7','Numpad8','Numpad9'];
+
+    function updateEmptyState() {
+      emptyState.style.display = sounds.length ? 'none' : 'block';
+    }
+
+    function createSoundCard(sound, index) {
+      const card = document.createElement('div');
+      card.className = 'sound-card';
+
+      const title = document.createElement('div');
+      title.className = 'sound-name';
+      title.textContent = sound.name;
+
+      const keybind = document.createElement('div');
+      keybind.className = 'keybind';
+      keybind.textContent = `Hotkey: ${sound.key.replace('Numpad', 'NumPad ')}`;
+
+      const controls = document.createElement('div');
+      controls.className = 'controls';
+
+      const playBtn = document.createElement('button');
+      playBtn.className = 'play-btn';
+      playBtn.textContent = '▶ Play';
+      playBtn.onclick = () => {
+        sound.audio.currentTime = 0;
+        sound.audio.play();
+      };
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = '✖ Delete';
+      deleteBtn.onclick = () => {
+        URL.revokeObjectURL(sound.audio.src);
+        sounds.splice(index, 1);
+        renderSounds();
+      };
+
+      controls.appendChild(playBtn);
+      controls.appendChild(deleteBtn);
+
+      card.appendChild(title);
+      card.appendChild(keybind);
+      card.appendChild(controls);
+
+      return card;
+    }
+
+    function renderSounds() {
+      soundGrid.innerHTML = '';
+
+      sounds.forEach((sound, index) => {
+        const card = createSoundCard(sound, index);
+        soundGrid.appendChild(card);
+      });
+
+      updateEmptyState();
+    }
+
+    uploadInput.addEventListener('change', (event) => {
+      const files = [...event.target.files];
+
+      files.forEach((file) => {
+        if (sounds.length >= keyPool.length) return;
+
+        const audio = new Audio(URL.createObjectURL(file));
+        const key = keyPool[sounds.length];
+
+        sounds.push({
+          name: file.name,
+          audio,
+          key,
+        });
+      });
+
+      renderSounds();
+      uploadInput.value = '';
+    });
+
+    stopAllBtn.addEventListener('click', () => {
+      sounds.forEach((sound) => {
+        sound.audio.pause();
+        sound.audio.currentTime = 0;
+      });
+    });
+
+    clearBtn.addEventListener('click', () => {
+      sounds.forEach(sound => {
+        sound.audio.pause();
+        URL.revokeObjectURL(sound.audio.src);
+      });
+
+      sounds.length = 0;
+      renderSounds();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      const key = event.code;
+
+      const sound = sounds.find(s => s.key === key);
+
+      if (sound) {
+        sound.audio.currentTime = 0;
+        sound.audio.play();
+      }
+    });
+
+    updateEmptyState();
+  </script>
+
+
+</body></html>
